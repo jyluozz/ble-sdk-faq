@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BLE SDK FAQ - 常见问题解答</title>
+  <style>
+    /* ===== 基础变量 ===== */
+    :root {
+      --bg-primary: #ffffff;
+      --bg-secondary: #f6f8fa;
+      --bg-card: #ffffff;
+      --text-primary: #24292f;
+      --text-secondary: #57606a;
+      --text-muted: #8b949e;
+      --accent: #0969da;
+      --accent-hover: #0860ca;
+      --border: #d0d7de;
+      --border-light: #eaecef;
+      --tag-bg: #ddf4ff;
+      --tag-text: #0969da;
+      --shadow: 0 1px 3px rgba(0,0,0,0.08);
+      --shadow-hover: 0 4px 12px rgba(0,0,0,0.12);
+      --radius: 8px;
+      --radius-lg: 12px;
+    }
+
+    /* ===== 重置样式 ===== */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* ===== 容器 ===== */
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+    }
+
+    /* ===== 头部 ===== */
+    .page-header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+
+    .page-header h1 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 0.5rem;
+    }
+
+    .page-header p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    .page-header .version {
+      display: inline-block;
+      margin-top: 0.75rem;
+      padding: 0.25rem 0.75rem;
+      background: var(--tag-bg);
+      color: var(--tag-text);
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+
+    /* ===== 工具栏 ===== */
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .search-box {
+      flex: 1;
+      max-width: 400px;
+      position: relative;
+    }
+
+    .search-box input {
+      width: 100%;
+      padding: 0.6rem 1rem 0.6rem 2.5rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 0.95rem;
+      background: var(--bg-primary);
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .search-box input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(9, 105, 218, 0.1);
+    }
+
+    .search-box::before {
+      content: "🔍";
+      position: absolute;
+      left: 0.75rem;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 0.9rem;
+      opacity: 0.6;
+    }
+
+    /* ===== 模块卡片 ===== */
+    .module-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-lg);
+      margin-bottom: 1.25rem;
+      overflow: hidden;
+      transition: box-shadow 0.2s, border-color 0.2s;
+    }
+
+    .module-card:hover {
+      box-shadow: var(--shadow-hover);
+      border-color: var(--border);
+    }
+
+    .module-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border-light);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .module-icon { font-size: 1.25rem; }
+    .module-title { font-size: 1rem; font-weight: 600; color: var(--text-primary); }
+
+    .module-toggle {
+      margin-left: auto;
+      color: var(--text-muted);
+      transition: transform 0.2s;
+      font-size: 0.75rem;
+    }
+
+    .module-card.expanded .module-toggle { transform: rotate(180deg); }
+
+    .module-body { display: none; padding: 1rem 1.25rem; }
+    .module-card.expanded .module-body { display: block; }
+
+    /* ===== FAQ列表项 ===== */
+    .faq-item {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid var(--border-light);
+      gap: 1rem;
+    }
+
+    .faq-item:last-child { border-bottom: none; }
+
+    .faq-question {
+      flex: 1;
+      font-size: 0.95rem;
+      color: var(--text-primary);
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+
+    .faq-question:hover { color: var(--accent); }
+
+    .faq-meta { display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; }
+
+    .faq-tag {
+      font-size: 0.7rem;
+      padding: 0.15rem 0.5rem;
+      background: var(--tag-bg);
+      color: var(--tag-text);
+      border-radius: 20px;
+      font-weight: 500;
+    }
+
+    /* ===== FAQ详情弹窗 ===== */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+
+    .modal-overlay.active { display: flex; }
+
+    .modal {
+      background: var(--bg-primary);
+      border-radius: var(--radius-lg);
+      width: 100%;
+      max-width: 680px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid var(--border-light);
+      position: sticky;
+      top: 0;
+      background: var(--bg-primary);
+    }
+
+    .modal-title { font-size: 1.1rem; font-weight: 600; }
+
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      line-height: 1;
+    }
+
+    .modal-close:hover { color: var(--text-primary); }
+
+    .modal-body { padding: 1.5rem; }
+
+    .modal-q {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+    }
+
+    .modal-q::before {
+      content: "Q";
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.5rem;
+      height: 1.5rem;
+      background: var(--accent);
+      color: white;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    .modal-answer {
+      color: var(--text-secondary);
+      line-height: 1.8;
+      white-space: pre-wrap;
+      padding-left: 2rem;
+    }
+
+    .modal-answer p { margin-bottom: 0.75rem; }
+    .modal-answer p:last-child { margin-bottom: 0; }
+
+    .modal-code {
+      background: #1e1e1e;
+      color: #d4d4d4;
+      padding: 1rem;
+      border-radius: var(--radius);
+      margin: 1rem 0 1rem 2rem;
+      overflow-x: auto;
+      font-family: "SF Mono", Monaco, Consolas, monospace;
+      font-size: 0.85rem;
+      line-height: 1.5;
+    }
+
+    .modal-footer {
+      padding: 0.75rem 1.5rem 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .modal-date {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    /* ===== 空状态 ===== */
+    .empty-state {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--text-muted);
+    }
+
+    .empty-state-icon { font-size: 3rem; margin-bottom: 1rem; }
+    .empty-state-text { font-size: 1rem; }
+
+    /* ===== 响应式 ===== */
+    @media (max-width: 640px) {
+      .container { padding: 1.5rem 1rem; }
+      .toolbar { flex-direction: column; align-items: stretch; }
+      .search-box { max-width: none; }
+      .page-header h1 { font-size: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="page-header">
+      <h1>BLE SDK FAQ</h1>
+      <p>BLE 蓝牙 SDK 常见问题解答</p>
+      <span class="version">v1.0.0</span>
+    </div>
+
+    <div class="toolbar">
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="搜索FAQ...">
+      </div>
+    </div>
+
+    <div id="faqModules"></div>
+  </div>
+
+  <!-- FAQ详情弹窗 -->
+  <div class="modal-overlay" id="modalDetail">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title" id="modalModuleName"></span>
+        <button class="modal-close" id="modalClose">&times;</button>
+      </div>
+      <div class="modal-body" id="modalBody"></div>
+      <div class="modal-footer">
+        <span class="modal-date" id="modalDate"></span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ===== 模块配置 =====
+    const MODULES = {
+      connection: { id: 'connection', name: '连接配对', icon: '📡' },
+      data: { id: 'data', name: '数据传输', icon: '📤' },
+      power: { id: 'power', name: '低功耗', icon: '🔋' },
+      ota: { id: 'ota', name: 'OTA升级', icon: '🔄' },
+      error: { id: 'error', name: '异常处理', icon: '⚠️' }
+    };
+
+    // ===== FAQ数据 =====
+    const FAQS = [
+      {
+        id: 'faq_001',
+        module: 'connection',
+        question: '配对失败如何排查？',
+        answer: '配对失败常见原因包括：\n\n1. 距离过远：确保设备在1米以内\n2. 名称冲突：多个设备同名可能导致配对错误\n3. 芯片忙碌：上一个连接未完全断开\n4. 加密不匹配：确认双方加密等级一致\n\n排查步骤：\n1. 重启双方设备\n2. 清除已配对列表\n3. 确认设备处于可发现模式\n4. 检查BLE协议栈日志',
+        code: '// 清除配对列表\nble_pair_clear_all();\n\n// 重新开始配对\nble_pair_start();',
+        tags: ['常见'],
+        date: '2026-05-10'
+      },
+      {
+        id: 'faq_002',
+        module: 'connection',
+        question: '多设备连接策略说明',
+        answer: 'TS8001支持多设备连接，但有以下限制：\n\n- 最多同时连接4个设备\n- 建议不超过3个以保证通信质量\n- 各连接共享带宽资源',
+        code: '// 设置最大连接数\nble_config.max_conn = 3;',
+        tags: ['常见'],
+        date: '2026-05-10'
+      },
+      {
+        id: 'faq_003',
+        module: 'connection',
+        question: '信号强度阈值如何配置？',
+        answer: '信号强度(RSSI)阈值用于控制连接质量和断开判定。\n\n推荐配置：\n- 最小连接阈值：-80 dBm\n- 警告阈值：-70 dBm',
+        code: 'ble_config.rssi_min = -80;\nble_config.rssi_warn = -70;',
+        tags: ['常见'],
+        date: '2026-05-10'
+      },
+      {
+        id: 'faq_004',
+        module: 'data',
+        question: 'MTU配置常见误区',
+        answer: 'MTU（最大传输单元）配置常见错误：\n\n1. MTU不是越大越好：过大会增加功耗\n2. 两端MTU不匹配：以较小值为准\n3. 未在连接建立后协商：需要手动触发MTU协商\n\n推荐默认值为23字节（BLE 4.0兼容），可升级到247字节（BLE 4.2+）',
+        code: '// 请求MTU协商\nble_att_request_mtu(247);',
+        tags: ['常见'],
+        date: '2026-05-12'
+      },
+      {
+        id: 'faq_005',
+        module: 'data',
+        question: '小包传输优化技巧',
+        answer: '针对小数据包（<20字节）的优化建议：\n\n1. 合并高频小数据为一批传输\n2. 使用Notify而非Write+Response\n3. 合理设置连接间隔',
+        code: '// 批量发送数据\nuint8_t batch_data[] = {0x01, 0x02, 0x03};\nble_notify_send(handle, batch_data, sizeof(batch_data));',
+        tags: ['常见'],
+        date: '2026-05-12'
+      },
+      {
+        id: 'faq_006',
+        module: 'data',
+        question: '传输延迟如何排查？',
+        answer: '传输延迟排查思路：\n\n1. 检查连接间隔是否过大\n2. 确认对端设备响应速度\n3. 查看协议栈是否有数据堆积',
+        tags: ['常见'],
+        date: '2026-05-12'
+      },
+      {
+        id: 'faq_007',
+        module: 'power',
+        question: '待机功耗如何优化？',
+        answer: '待机功耗优化关键点：\n\n1. 合理配置Deep Sleep模式\n2. 关闭不必要的外设时钟\n3. 降低CPU频率\n4. 优化广播间隔',
+        code: '// 进入深度睡眠\nsystem_sleep(SLEEP_MODE_DEEP);\n\n// 关闭未使用外设\nperipheral_clock_disable(UART_ID);',
+        tags: ['常见'],
+        date: '2026-05-15'
+      },
+      {
+        id: 'faq_008',
+        module: 'ota',
+        question: 'OTA升级失败如何处理？',
+        answer: 'OTA升级失败处理流程：\n\n1. 检查固件签名是否正确\n2. 确认升级区大小足够\n3. 确保传输过程不断电\n4. 验证新固件完整性',
+        tags: ['常见'],
+        date: '2026-05-15'
+      }
+    ];
+
+    // ===== 渲染模块列表 =====
+    function renderModules(faqs) {
+      const container = document.getElementById('faqModules');
+
+      if (faqs.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">🔍</div>
+            <div class="empty-state-text">未找到相关FAQ</div>
+          </div>`;
+        return;
+      }
+
+      // 按模块分组并排序
+      const modules = {};
+      faqs.forEach(faq => {
+        if (!modules[faq.module]) modules[faq.module] = [];
+        modules[faq.module].push(faq);
+      });
+
+      // 按日期倒序
+      Object.keys(modules).forEach(moduleId => {
+        modules[moduleId].sort((a, b) => new Date(b.date) - new Date(a.date));
+      });
+
+      container.innerHTML = '';
+
+      Object.keys(modules).forEach(moduleId => {
+        const module = MODULES[moduleId];
+        if (!module) return;
+
+        const faqList = modules[moduleId];
+        if (faqList.length === 0) return;
+
+        const card = document.createElement('div');
+        card.className = 'module-card expanded';
+        card.innerHTML = `
+          <div class="module-header">
+            <span class="module-icon">${module.icon}</span>
+            <span class="module-title">${module.name}</span>
+            <span class="faq-count">${faqList.length}条</span>
+            <span class="module-toggle">▼</span>
+          </div>
+          <div class="module-body">
+            ${faqList.map(faq => `
+              <div class="faq-item">
+                <span class="faq-question" data-id="${faq.id}">${faq.question}</span>
+                <div class="faq-meta">
+                  ${faq.tags.map(tag => `<span class="faq-tag">${tag}</span>`).join('')}
+                </div>
+              </div>
+            `).join('')}
+          </div>`;
+
+        container.appendChild(card);
+      });
+
+      // 绑定模块展开/收起
+      document.querySelectorAll('.module-header').forEach(header => {
+        header.addEventListener('click', () => {
+          header.parentElement.classList.toggle('expanded');
+        });
+      });
+
+      // 绑定FAQ点击
+      document.querySelectorAll('.faq-question').forEach(item => {
+        item.addEventListener('click', () => {
+          const faq = FAQS.find(f => f.id === item.dataset.id);
+          if (faq) openModal(faq);
+        });
+      });
+    }
+
+    // ===== 弹窗操作 =====
+    function openModal(faq) {
+      document.getElementById('modalModuleName').textContent = MODULES[faq.module]?.name || '';
+      document.getElementById('modalDate').textContent = faq.date;
+
+      const body = document.getElementById('modalBody');
+      let html = `<div class="modal-q">${escapeHtml(faq.question)}</div>`;
+      html += `<div class="modal-answer">${formatAnswer(faq.answer)}</div>`;
+      if (faq.code) {
+        html += `<div class="modal-code">${escapeHtml(faq.code)}</div>`;
+      }
+      body.innerHTML = html;
+
+      document.getElementById('modalDetail').classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal() {
+      document.getElementById('modalDetail').classList.remove('active');
+      document.body.style.overflow = '';
+    }
+
+    // ===== 工具函数 =====
+    function formatAnswer(text) {
+      return text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/\n/g, '<br>')
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // ===== 搜索 =====
+    function handleSearch(query) {
+      if (query.trim() === '') {
+        renderModules(FAQS);
+      } else {
+        const q = query.toLowerCase();
+        const results = FAQS.filter(faq =>
+          faq.question.toLowerCase().includes(q) ||
+          faq.answer.toLowerCase().includes(q)
+        );
+        renderModules(results);
+      }
+    }
+
+    // ===== 初始化 =====
+    document.addEventListener('DOMContentLoaded', () => {
+      renderModules(FAQS);
+
+      const searchInput = document.getElementById('searchInput');
+      searchInput.addEventListener('input', (e) => handleSearch(e.target.value));
+
+      document.getElementById('modalClose').addEventListener('click', closeModal);
+      document.getElementById('modalDetail').addEventListener('click', (e) => {
+        if (e.target === document.getElementById('modalDetail')) closeModal();
+      });
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeModal();
+      });
+    });
+  </script>
+</body>
+</html>
