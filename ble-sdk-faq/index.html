@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BLE SDK FAQ - 常见问题解答</title>
+  <link rel="stylesheet" href="faq.css">
+</head>
+<body>
+  <div class="container">
+    <!-- 工具栏 -->
+    <div class="toolbar">
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="搜索FAQ...">
+      </div>
+      <button class="btn-add" id="btnAddFaq">+ 添加FAQ</button>
+    </div>
+
+    <!-- FAQ模块列表 -->
+    <div id="faqModules"></div>
+  </div>
+
+  <!-- 添加FAQ模态框 -->
+  <div class="modal-overlay" id="modalAddFaq">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title">添加新FAQ</h2>
+        <button class="modal-close" id="modalClose">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>问题标题</label>
+          <input type="text" id="faqQuestion" placeholder="请输入问题描述...">
+        </div>
+        <div class="form-group">
+          <label>所属模块</label>
+          <select id="faqModule">
+            <option value="">选择模块...</option>
+            <option value="connection">📡 连接配对</option>
+            <option value="data">📤 数据传输</option>
+            <option value="power">🔋 低功耗</option>
+            <option value="ota">🔄 OTA升级</option>
+            <option value="error">⚠️ 异常处理</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>详细解答</label>
+          <textarea id="faqAnswer" placeholder="请输入详细解答..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>代码示例（可选）</label>
+          <textarea id="faqCode" placeholder="请输入代码示例..." style="min-height: 80px;"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="btnCancel">取消</button>
+        <button class="btn btn-primary" id="btnSubmit">提交</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="faq.js"></script>
+  <script>
+    // ===== 首页渲染逻辑 =====
+
+    // 渲染模块列表
+    function renderModules(faqs) {
+      const container = document.getElementById('faqModules');
+      container.innerHTML = '';
+
+      // 按模块分组
+      const modules = {};
+      faqs.forEach(faq => {
+        if (!modules[faq.module]) {
+          modules[faq.module] = [];
+        }
+        modules[faq.module].push(faq);
+      });
+
+      // 渲染每个模块
+      Object.keys(modules).forEach(moduleId => {
+        const module = MODULES[moduleId];
+        if (!module) return;
+
+        const faqList = modules[moduleId];
+
+        const card = document.createElement('div');
+        card.className = 'module-card';
+        card.innerHTML = `
+          <div class="module-header" data-module="${moduleId}">
+            <span class="module-icon">${module.icon}</span>
+            <span class="module-title">${module.name}</span>
+            <span class="module-toggle">▼</span>
+          </div>
+          <div class="module-body">
+            ${faqList.map(faq => `
+              <div class="faq-item">
+                <span class="faq-question" data-id="${faq.id}">${faq.question}</span>
+                <div class="faq-meta">
+                  ${faq.tags.map(tag => `<span class="faq-tag">${tag}</span>`).join('')}
+                </div>
+              </div>
+            `).join('')}
+          </div>
+          <div class="module-footer">
+            <a class="btn-detail" href="detail.html?module=${moduleId}">查看详情 →</a>
+          </div>
+        `;
+
+        container.appendChild(card);
+      });
+
+      // 绑定模块展开/收起事件
+      document.querySelectorAll('.module-header').forEach(header => {
+        header.addEventListener('click', () => {
+          header.parentElement.classList.toggle('expanded');
+        });
+      });
+
+      // 绑定FAQ点击事件
+      document.querySelectorAll('.faq-question').forEach(item => {
+        item.addEventListener('click', () => {
+          const faqId = item.dataset.id;
+          const faq = FAQStorage.getById(faqId);
+          if (faq) {
+            window.location.href = `detail.html?module=${faq.module}&highlight=${faqId}`;
+          }
+        });
+      });
+    }
+
+    // 搜索功能
+    function handleSearch(query) {
+      if (query.trim() === '') {
+        renderModules(FAQStorage.getAll());
+      } else {
+        const results = FAQStorage.search(query);
+        renderModules(results);
+      }
+    }
+
+    // 初始化
+    document.addEventListener('DOMContentLoaded', () => {
+      renderModules(FAQStorage.getAll());
+
+      // 搜索输入
+      const searchInput = document.getElementById('searchInput');
+      searchInput.addEventListener('input', (e) => {
+        handleSearch(e.target.value);
+      });
+
+      // 添加FAQ模态框
+      const modal = document.getElementById('modalAddFaq');
+      const btnAddFaq = document.getElementById('btnAddFaq');
+      const btnClose = document.getElementById('modalClose');
+      const btnCancel = document.getElementById('btnCancel');
+      const btnSubmit = document.getElementById('btnSubmit');
+
+      function openModal() {
+        modal.classList.add('active');
+        document.getElementById('faqQuestion').focus();
+      }
+
+      function closeModal() {
+        modal.classList.remove('active');
+        // 清空表单
+        document.getElementById('faqQuestion').value = '';
+        document.getElementById('faqModule').value = '';
+        document.getElementById('faqAnswer').value = '';
+        document.getElementById('faqCode').value = '';
+      }
+
+      btnAddFaq.addEventListener('click', openModal);
+      btnClose.addEventListener('click', closeModal);
+      btnCancel.addEventListener('click', closeModal);
+
+      // 点击遮罩关闭
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+      });
+
+      // 提交FAQ
+      btnSubmit.addEventListener('click', () => {
+        const question = document.getElementById('faqQuestion').value.trim();
+        const module = document.getElementById('faqModule').value;
+        const answer = document.getElementById('faqAnswer').value.trim();
+        const code = document.getElementById('faqCode').value.trim();
+
+        if (!question || !module || !answer) {
+          alert('请填写必填项：问题标题、所属模块、详细解答');
+          return;
+        }
+
+        FAQStorage.add({
+          module,
+          question,
+          answer,
+          code,
+          tags: ['新增'],
+          author: ''
+        });
+
+        closeModal();
+        renderModules(FAQStorage.getAll());
+        alert('FAQ添加成功！');
+      });
+
+      // ESC关闭模态框
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.classList.contains('active')) {
+          closeModal();
+        }
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FAQ详情 - BLE SDK</title>
+  <link rel="stylesheet" href="faq.css">
+  <style>
+    /* 详情页额外样式 */
+    .detail-header {
+      margin-bottom: 2rem;
+    }
+
+    .breadcrumb {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    .breadcrumb a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .breadcrumb a:hover {
+      text-decoration: underline;
+    }
+
+    .module-info {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .module-info .module-icon {
+      font-size: 2rem;
+    }
+
+    .module-info .module-name {
+      font-size: 1.5rem;
+      font-weight: 600;
+    }
+
+    .faq-detail-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .faq-detail-card:target {
+      background: var(--tag-bg);
+      border-color: var(--accent);
+    }
+
+    .faq-detail-question {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .faq-detail-question::before {
+      content: "Q";
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.5rem;
+      height: 1.5rem;
+      background: var(--accent);
+      color: white;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .faq-detail-answer {
+      color: var(--text-secondary);
+      line-height: 1.8;
+      white-space: pre-wrap;
+    }
+
+    .faq-detail-answer p {
+      margin-bottom: 0.75rem;
+    }
+
+    .faq-detail-answer p:last-child {
+      margin-bottom: 0;
+    }
+
+    .faq-detail-code {
+      background: #1e1e1e;
+      color: #d4d4d4;
+      padding: 1rem;
+      border-radius: var(--radius);
+      margin: 1rem 0;
+      overflow-x: auto;
+      font-family: "SF Mono", Monaco, Consolas, monospace;
+      font-size: 0.85rem;
+      line-height: 1.5;
+    }
+
+    .faq-detail-date {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 1rem;
+      text-align: right;
+    }
+
+    .btn-back-top {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      width: 2.5rem;
+      height: 2.5rem;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      font-size: 1.2rem;
+      cursor: pointer;
+      box-shadow: var(--shadow);
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .btn-back-top.visible {
+      opacity: 1;
+    }
+
+    .btn-back-top:hover {
+      background: var(--accent-hover);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="detail-header">
+      <div class="breadcrumb">
+        <a href="index.html">← 返回首页</a>
+        <span>/</span>
+        <span id="breadcrumbModule">加载中...</span>
+      </div>
+      <div class="module-info" id="moduleInfo"></div>
+    </div>
+
+    <div id="faqList"></div>
+  </div>
+
+  <button class="btn-back-top" id="btnBackTop">↑</button>
+
+  <script src="faq.js"></script>
+  <script>
+    // ===== 详情页渲染逻辑 =====
+
+    function renderDetailPage() {
+      const params = new URLSearchParams(window.location.search);
+      const moduleId = params.get('module');
+      const highlightId = params.get('highlight');
+
+      if (!moduleId) {
+        window.location.href = 'index.html';
+        return;
+      }
+
+      const module = MODULES[moduleId];
+      if (!module) {
+        window.location.href = 'index.html';
+        return;
+      }
+
+      // 渲染面包屑和模块信息
+      document.getElementById('breadcrumbModule').textContent = module.name;
+      document.getElementById('moduleInfo').innerHTML = `
+        <span class="module-icon">${module.icon}</span>
+        <span class="module-name">${module.name}</span>
+      `;
+
+      // 设置页面标题
+      document.title = `${module.name} - FAQ详情 - BLE SDK`;
+
+      // 渲染FAQ列表
+      const faqs = FAQStorage.getByModule(moduleId);
+      const container = document.getElementById('faqList');
+
+      if (faqs.length === 0) {
+        container.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 2rem;">暂无FAQ内容</p>';
+        return;
+      }
+
+      container.innerHTML = faqs.map(faq => `
+        <div class="faq-detail-card" id="${faq.id}">
+          <div class="faq-detail-question">${faq.question}</div>
+          <div class="faq-detail-answer">${formatAnswer(faq.answer)}</div>
+          ${faq.code ? `<div class="faq-detail-code">${escapeHtml(faq.code)}</div>` : ''}
+          <div class="faq-detail-date">${faq.date}</div>
+        </div>
+      `).join('');
+
+      // 如果有高亮ID，滚动到该位置
+      if (highlightId) {
+        setTimeout(() => {
+          const target = document.getElementById(highlightId);
+          if (target) {
+            target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }, 100);
+      }
+    }
+
+    // 格式化答案（简单处理换行和粗体）
+    function formatAnswer(text) {
+      return text
+        .replace(/\n/g, '<br>')
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    }
+
+    // HTML转义
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // 回到顶部按钮
+    function initBackTopButton() {
+      const btn = document.getElementById('btnBackTop');
+
+      window.addEventListener('scroll', () => {
+        if (window.scrollY > 300) {
+          btn.classList.add('visible');
+        } else {
+          btn.classList.remove('visible');
+        }
+      });
+
+      btn.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+    }
+
+    // 初始化
+    document.addEventListener('DOMContentLoaded', () => {
+      renderDetailPage();
+      initBackTopButton();
+    });
+  </script>
+</body>
+</html>
